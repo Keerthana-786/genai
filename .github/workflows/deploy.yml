@@ -25,6 +25,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Inject Gemini API Key into config
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "window.APP_CONFIG = { GEMINI_API_KEY: '${GEMINI_API_KEY}' };" > ./public/config.js
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

@@ -425,8 +425,10 @@ vector<int> bfs(int startNode, int n, const vector<vector<int>>& adj) {
       const clientLatency = Math.round(performance.now() - startTime);
 
       if (!data) {
-        // Standalone Client-Side Analysis for GitHub Pages
-        data = generateClientAnalysis({ code, filename: activeFilename, language, query, task: activeTask });
+        // Backend unavailable (GitHub Pages) — call Gemini directly from browser
+        data = await callGeminiDirect({ code, filename: activeFilename, language, query, task: activeTask });
+        const elapsed = Math.round(performance.now() - startTime);
+        data.latencyMs = elapsed;
       }
 
       renderAiResponse(data, clientLatency);
@@ -444,44 +446,103 @@ vector<int> bfs(int startNode, int n, const vector<vector<int>>& adj) {
     }
   });
 
-  // Client-Side Standalone Code Analysis Generator for GitHub Pages Demo
-  function generateClientAnalysis({ code, filename, language, query, task }) {
+  // --- Gemini API key: injected at build time by GitHub Actions into config.js ---
+  const GEMINI_API_KEY = (window.APP_CONFIG && window.APP_CONFIG.GEMINI_API_KEY) || '';
+  const GEMINI_MODELS = [
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
+  ];
+
+  /**
+   * Call Gemini API directly from the browser (for GitHub Pages / static deployment).
+   * Falls back through multiple models on 503/429 errors.
+   */
+  async function callGeminiDirect({ code, filename, language, query, task }) {
     const lines = code.split('\n');
     const totalLines = lines.length;
     const nonBlank = lines.filter((l) => l.trim().length > 0).length;
-    const detectedLang = language === 'AUTO' ? (code.includes('def ') ? 'PYTHON' : code.includes('class ') ? 'JAVASCRIPT' : 'CODE') : language;
-    const hasLoops = /for\s*\(|while\s*\(|for\s+\w+\s+in/i.test(code);
-    const estComplexity = hasLoops ? 'O(N)' : 'O(1)';
+    const detectedLang = language === 'AUTO'
+      ? (code.includes('def ') ? 'Python' : code.includes('fn ') ? 'Rust' : code.includes('class ') ? 'JavaScript' : 'Code')
+      : language;
 
-    let answer = `### Code Analysis Report: ${filename ? `\`${filename}\`` : detectedLang}\n\n`;
-    answer += `> **Language:** \`${detectedLang}\` | **Lines:** ${totalLines} (${nonBlank} code) | **Est. Time Complexity:** \`${estComplexity}\` | **Analysis Intent:** \`${task.toUpperCase()}\` \n\n`;
-    answer += `#### Architectural Breakdown & Key Logic\n\n`;
-    answer += `1. **Input Preprocessing & Validation:** Accepts incoming parameters and sets up execution state.\n`;
-    answer += `2. **Core Algorithm Processing:** Executes logic with ${hasLoops ? 'iterative loops' : 'constant-time statements'} maintaining linear memory bounds.\n\n`;
-    answer += `#### Primary Intent Answer: ${query}\n\n`;
-
-    if (task === 'bug') {
-      answer += `**Bug & Edge Case Audit:**\n`;
-      answer += `- Verified array boundary access conditions.\n`;
-      answer += `- Checked for null pointer / undefined dereferences.\n`;
-      answer += `- Ensure input parameter types are validated prior to invocation.\n\n`;
-    } else if (task === 'optimize') {
-      answer += `**Optimization Recommendations:**\n`;
-      answer += `- Current estimated complexity is \`${estComplexity}\`.\n`;
-      answer += `- Cache repeated computations where applicable.\n`;
-      answer += `- Consider pre-allocating memory buffers for large dataset inputs.\n\n`;
-    } else if (task === 'test') {
-      answer += `**Generated Unit Tests:**\n\n\`\`\`javascript\n// Unit test suite for ${filename || 'solution'}\ndescribe('Solution Test Suite', () => {\n  test('valid input test', () => {\n    // verify standard execution\n  });\n  test('boundary & edge cases', () => {\n    // verify empty/null inputs\n  });\n});\n\`\`\`\n\n`;
-    } else {
-      answer += `This module provides structured control flow for ${detectedLang} code execution, adhering to standard functional breakdown principles.\n\n`;
+    if (!GEMINI_API_KEY) {
+      return {
+        answer: '### Configuration Error\n\nGemini API key is not configured. Please ensure the `GEMINI_API_KEY` secret is set in GitHub repository settings under **Settings → Secrets → Actions**.',
+        language: detectedLang,
+        analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: 'N/A' },
+        modelUsed: 'Not Configured',
+        latencyMs: 0,
+      };
     }
 
+    const taskInstructions = {
+      explain: 'Explain what this code does clearly. Describe the overall purpose, key functions, logic flow, and any important patterns or concepts used.',
+      bug: 'Perform a thorough bug and edge-case audit. Identify real bugs, potential runtime errors, null/undefined dereferences, off-by-one errors, and security issues. Provide fixed code snippets.',
+      optimize: 'Analyze the time and space complexity. Identify performance bottlenecks and suggest concrete, specific optimizations with improved code examples.',
+      test: 'Generate a comprehensive unit test suite for this code with meaningful test cases covering normal inputs, edge cases, and error conditions.',
+      document: 'Generate professional inline documentation (docstrings, JSDoc, or equivalent) for every function and class in this code.',
+    };
+
+    const systemPrompt = `You are an expert senior software engineer and code reviewer. The user needs a ${task} analysis of their ${detectedLang} code.
+
+Code to analyze (${totalLines} lines, ${nonBlank} non-blank):
+\`\`\`${detectedLang.toLowerCase()}
+${code}
+\`\`\`
+
+User's specific question: "${query || 'Please analyze this code.'}"
+
+Task: ${taskInstructions[task] || taskInstructions.explain}
+
+Provide a thorough, accurate, technically precise answer. Use markdown formatting with headings, code blocks, and bullet points where appropriate. Be specific to THIS code — do not give generic answers.`;
+
+    const body = {
+      contents: [{ parts: [{ text: systemPrompt }] }],
+      generationConfig: { temperature: 0.15, maxOutputTokens: 3000 },
+    };
+
+    let lastError = null;
+    for (const model of GEMINI_MODELS) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(20000),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          lastError = new Error(`Gemini ${model} error (${res.status}): ${errText.slice(0, 200)}`);
+          continue;
+        }
+
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          return {
+            answer: text,
+            language: detectedLang,
+            analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: 'Analyzing...' },
+            modelUsed: `Google Gemini (${model})`,
+            latencyMs: 0,
+          };
+        }
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    // All models failed — return error message
     return {
-      answer,
+      answer: `### Analysis Error\n\nUnable to connect to Gemini AI: ${lastError?.message || 'Unknown error'}.\n\nPlease check your internet connection and try again.`,
       language: detectedLang,
-      analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: estComplexity },
-      modelUsed: 'Code Intelligence Engine (Live Demo)',
-      latencyMs: 85,
+      analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: 'N/A' },
+      modelUsed: 'Error',
+      latencyMs: 0,
     };
   }
 
