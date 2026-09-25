@@ -530,7 +530,7 @@ function generateBuiltinAnswer({ code, filename, language, query, task, analysis
  * External LLM API Caller (Google Gemini)
  */
 async function callGeminiAPI({ apiKey, code, language, query, task, analysis, similarDocs }) {
-  const candidateModels = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.8-flash', 'gemini-3.5-flash'];
+  const candidateModels = ['gemini-3.6-flash', 'gemini-3.1-flash-lite', 'gemma-4-26b-a4b-it', 'gemini-3.5-flash', 'gemini-3.7-flash', 'gemini-3.8-flash'];
   let lastError = null;
 
   const corpusContext = (similarDocs || []).slice(0, 3).map((d) => `Snippet [ID: ${d.corpusId}]:\n${d.snippet}`).join('\n---\n');

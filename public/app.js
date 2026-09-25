@@ -448,13 +448,13 @@ vector<int> bfs(int startNode, int n, const vector<vector<int>>& adj) {
 
   // --- Gemini API key: injected at build time by GitHub Actions into config.js ---
   const GEMINI_API_KEY = (window.APP_CONFIG && window.APP_CONFIG.GEMINI_API_KEY) || '';
-  // Confirmed working models for this API key (tested live)
+  // Gemini model candidates: try v1beta (confirmed working models first)
   const GEMINI_MODELS = [
-    { model: 'gemini-flash-latest', api: 'v1beta' },
     { model: 'gemini-3.6-flash', api: 'v1beta' },
-    { model: 'gemini-3.7-flash', api: 'v1beta' },
-    { model: 'gemini-3.8-flash', api: 'v1beta' },
+    { model: 'gemini-3.1-flash-lite', api: 'v1beta' },
+    { model: 'gemma-4-26b-a4b-it', api: 'v1beta' },
     { model: 'gemini-3.5-flash', api: 'v1beta' },
+    { model: 'gemini-3.7-flash', api: 'v1beta' },
   ];
 
   /**
@@ -505,59 +505,45 @@ Provide a thorough, accurate, technically precise answer. Use markdown formattin
       generationConfig: { temperature: 0.15, maxOutputTokens: 3000 },
     };
 
-    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     let lastError = null;
+    for (const { model, api } of GEMINI_MODELS) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/${api}/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(20000),
+        });
 
-    // Try each model, with 2 full rounds and small delays on 503s
-    for (let round = 0; round < 2; round++) {
-      for (const { model, api } of GEMINI_MODELS) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/${api}/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-            signal: AbortSignal.timeout(25000),
-          });
-
-          if (res.status === 503 || res.status === 429) {
-            // Overloaded — wait briefly and try next model
-            lastError = new Error(`Gemini ${model} overloaded (${res.status})`);
-            await sleep(1500);
-            continue;
-          }
-
-          if (!res.ok) {
-            const errText = await res.text();
-            lastError = new Error(`Gemini ${model} error (${res.status}): ${errText.slice(0, 150)}`);
-            continue;
-          }
-
-          const data = await res.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text && text.trim()) {
-            return {
-              answer: text,
-              language: detectedLang,
-              analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: 'Analyzed' },
-              modelUsed: `Google Gemini (${model})`,
-              latencyMs: 0,
-            };
-          }
-        } catch (err) {
-          lastError = err;
+        if (!res.ok) {
+          const errText = await res.text();
+          lastError = new Error(`Gemini ${model} (${api}) error (${res.status}): ${errText.slice(0, 200)}`);
+          continue;
         }
+
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          return {
+            answer: text,
+            language: detectedLang,
+            analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: 'Analyzed' },
+            modelUsed: `Google Gemini (${model})`,
+            latencyMs: 0,
+          };
+        }
+      } catch (err) {
+        lastError = err;
       }
-      // Wait 3s before 2nd round if all failed
-      if (round === 0) await sleep(3000);
     }
 
-    // All attempts failed — show error
+    // All models failed — return error message
     return {
-      answer: `### Gemini AI Unavailable\n\nAll models are currently overloaded (high demand). This is temporary.\n\n**Please try again in 30–60 seconds.**\n\n*Last error: ${lastError?.message || 'Unknown error'}*`,
+      answer: `### Analysis Error\n\nUnable to connect to Gemini AI: ${lastError?.message || 'Unknown error'}.\n\nPlease check your internet connection and try again.`,
       language: detectedLang,
       analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: 'N/A' },
-      modelUsed: 'Retrying...',
+      modelUsed: 'Error',
       latencyMs: 0,
     };
   }
