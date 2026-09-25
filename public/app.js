@@ -448,11 +448,13 @@ vector<int> bfs(int startNode, int n, const vector<vector<int>>& adj) {
 
   // --- Gemini API key: injected at build time by GitHub Actions into config.js ---
   const GEMINI_API_KEY = (window.APP_CONFIG && window.APP_CONFIG.GEMINI_API_KEY) || '';
+  // Gemini model candidates: try v1 first (stable), then v1beta
   const GEMINI_MODELS = [
-    'gemini-2.0-flash',
-    'gemini-2.0-flash-lite',
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
+    { model: 'gemini-1.5-flash', api: 'v1' },
+    { model: 'gemini-1.5-flash', api: 'v1beta' },
+    { model: 'gemini-1.5-pro', api: 'v1' },
+    { model: 'gemini-1.5-pro', api: 'v1beta' },
+    { model: 'gemini-pro', api: 'v1beta' },
   ];
 
   /**
@@ -504,9 +506,9 @@ Provide a thorough, accurate, technically precise answer. Use markdown formattin
     };
 
     let lastError = null;
-    for (const model of GEMINI_MODELS) {
+    for (const { model, api } of GEMINI_MODELS) {
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/${api}/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
         const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -516,7 +518,7 @@ Provide a thorough, accurate, technically precise answer. Use markdown formattin
 
         if (!res.ok) {
           const errText = await res.text();
-          lastError = new Error(`Gemini ${model} error (${res.status}): ${errText.slice(0, 200)}`);
+          lastError = new Error(`Gemini ${model} (${api}) error (${res.status}): ${errText.slice(0, 200)}`);
           continue;
         }
 
@@ -526,7 +528,7 @@ Provide a thorough, accurate, technically precise answer. Use markdown formattin
           return {
             answer: text,
             language: detectedLang,
-            analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: 'Analyzing...' },
+            analysis: { totalLines, nonBlankLines: nonBlank, estimatedComplexity: 'Analyzed' },
             modelUsed: `Google Gemini (${model})`,
             latencyMs: 0,
           };
