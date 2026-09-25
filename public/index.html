@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Code Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <!-- Background Ambient Glow -->
+  <div class="bg-gradient-glow"></div>
+
+  <!-- Custom Directional Arrow Cursor -->
+  <div id="custom-cursor" class="custom-cursor">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="cursor-svg">
+      <path d="M5 3L19 12L12 14L9 21L5 3Z" stroke="#3b82f6" stroke-width="1.75" stroke-linejoin="bevel" fill="rgba(59, 130, 246, 0.15)"/>
+    </svg>
+  </div>
+
+  <div class="app-container">
+    <!-- Editorial Header -->
+    <header class="editorial-header">
+      <div class="header-main">
+        <div class="brand">
+          <div class="brand-mark">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+          </div>
+          <h1 class="app-title">Agentic Code Intelligence</h1>
+        </div>
+
+        <div class="header-status-inline">
+          <span class="status-indicator"></span>
+          <span id="system-status" class="status-text">SYSTEM ONLINE</span>
+        </div>
+      </div>
+
+      <!-- Quiet Session Stats Strip -->
+      <div class="session-stats-strip">
+        <div class="stat-cell">
+          <span class="stat-key">QUERIES RUN</span>
+          <span id="stat-queries-run" class="stat-val">0</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-cell">
+          <span class="stat-key">AVG LATENCY</span>
+          <span id="stat-avg-latency" class="stat-val">120ms</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-cell">
+          <span class="stat-key">CORPUS INDEX</span>
+          <span class="stat-val">8,765 SNIPPETS</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Segmented Tab Control -->
+    <nav class="segmented-control" role="tablist">
+      <button class="segmented-btn active" id="tab-btn-ai" data-target="section-ai">
+        <span>Code Assistant</span>
+      </button>
+      <button class="segmented-btn" id="tab-btn-search" data-target="section-search">
+        <span>Corpus Search</span>
+      </button>
+    </nav>
+
+    <!-- SECTION 1: AI Code Assistant -->
+    <section id="section-ai" class="tab-content active">
+      <div class="workbench-panel">
+        
+        <!-- ZONE 1: Input Source Zone -->
+        <div class="zone-block input-zone">
+          <div class="zone-header">
+            <span class="zone-num">01</span>
+            <span class="zone-title">SOURCE CODE</span>
+            <div class="sample-loader-inline">
+              <span class="sample-label">SAMPLES:</span>
+              <button type="button" class="sample-link" data-sample="binary-search">Binary Search Bug</button>
+              <span class="dot-sep">•</span>
+              <button type="button" class="sample-link" data-sample="js-fetch">JS Cache Manager</button>
+              <span class="dot-sep">•</span>
+              <button type="button" class="sample-link" data-sample="knapsack">DP Knapsack</button>
+              <span class="dot-sep">•</span>
+              <button type="button" class="sample-link" data-sample="bfs">Graph BFS</button>
+            </div>
+          </div>
+
+          <!-- File Upload Bar & Dropzone -->
+          <div class="dropzone-area" id="dropzone">
+            <input 
+              type="file" 
+              id="file-input" 
+              class="file-input-hidden" 
+              accept=".py,.js,.jsx,.ts,.tsx,.java,.cpp,.c,.h,.hpp,.go,.rs,.rb,.php,.cs,.html,.css,.sql,.sh,.txt,.json" 
+            />
+            <div class="dropzone-label" id="dropzone-prompt">
+              <svg class="icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Drop code file here or <strong>browse local file</strong></span>
+            </div>
+            <div class="file-loaded-inline hidden" id="file-loaded-badge">
+              <span class="file-name" id="file-name-display">filename.py</span>
+              <span class="file-size" id="file-size-display">(0 KB)</span>
+              <button type="button" class="btn-remove-file" id="btn-clear-file" title="Remove file">Remove</button>
+            </div>
+          </div>
+
+          <!-- Code Editor Wrapper -->
+          <div class="editor-container">
+            <div class="editor-bar">
+              <div class="editor-bar-left">
+                <label for="language-select" class="meta-label">LANGUAGE</label>
+                <select id="language-select" class="minimal-select">
+                  <option value="AUTO" selected>Auto Detect</option>
+                  <option value="PYTHON">Python</option>
+                  <option value="JAVASCRIPT">JavaScript</option>
+                  <option value="TYPESCRIPT">TypeScript</option>
+                  <option value="C++">C++</option>
+                  <option value="JAVA">Java</option>
+                  <option value="GO">Go</option>
+                  <option value="RUST">Rust</option>
+                  <option value="HTML">HTML</option>
+                  <option value="SQL">SQL</option>
+                </select>
+              </div>
+
+              <div class="editor-bar-right">
+                <span id="code-stats" class="inline-meta">0 lines | 0 chars</span>
+                <button type="button" id="btn-clear-code" class="text-action">Clear</button>
+              </div>
+            </div>
+
+            <textarea 
+              id="code-input" 
+              class="minimal-editor" 
+              placeholder="// Paste code snippet or upload a file above..."
+              spellcheck="false"
+              rows="12"
+              required
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- ZONE 2 & 3: Configuration & Actions Zone -->
+        <form id="ai-code-form" class="config-actions-form">
+          <div class="zone-block config-zone">
+            <div class="zone-header">
+              <span class="zone-num">02</span>
+              <span class="zone-title">ANALYSIS INTENT</span>
+            </div>
+
+            <!-- Segmented Action Buttons -->
+            <div class="intent-grid">
+              <button type="button" class="intent-btn active" data-task="explain" data-query="Explain what this code does step-by-step and break down its architecture.">
+                <span class="intent-name">Explain Code</span>
+                <span class="intent-desc">Architecture &amp; Walkthrough</span>
+              </button>
+
+              <button type="button" class="intent-btn" data-task="bug" data-query="Identify potential bugs, edge cases, vulnerabilities, and error handling issues in this code.">
+                <span class="intent-name">Find Bugs &amp; Fixes</span>
+                <span class="intent-desc">Edge Cases &amp; Safety</span>
+              </button>
+
+              <button type="button" class="intent-btn" data-task="optimize" data-query="Analyze time and space complexity, and provide optimized refactoring suggestions.">
+                <span class="intent-name">Optimize &amp; Refactor</span>
+                <span class="intent-desc">Big-O &amp; Execution Speed</span>
+              </button>
+
+              <button type="button" class="intent-btn" data-task="test" data-query="Generate a comprehensive unit test suite covering normal inputs and edge cases.">
+                <span class="intent-name">Generate Unit Tests</span>
+                <span class="intent-desc">Boundary Conditions &amp; Assertions</span>
+              </button>
+
+              <button type="button" class="intent-btn" data-task="rag" data-query="Find similar code snippets and algorithms from the indexed CoIR corpus dataset.">
+                <span class="intent-name">Match Corpus (RAG)</span>
+                <span class="intent-desc">Indexed Dataset Lookup</span>
+              </button>
+            </div>
+
+            <!-- Custom Query Input & RAG Toggle -->
+            <div class="query-execution-bar">
+              <div class="query-field-wrapper">
+                <input 
+                  type="text" 
+                  id="ai-custom-query" 
+                  class="editorial-input" 
+                  placeholder="Specify custom question or query..."
+                  value="Explain what this code does step-by-step and break down its architecture."
+                />
+              </div>
+
+              <div class="query-actions">
+                <label class="inline-toggle-label">
+                  <input type="checkbox" id="rag-toggle" />
+                  <span class="custom-check"></span>
+                  <span class="toggle-text">Augment with CoIR RAG</span>
+                </label>
+
+                <!-- Hidden form parameters for backend compatibility -->
+                <input type="hidden" id="ai-provider-select" value="gemini" />
+                <input type="hidden" id="gemini-api-key" value="" />
+
+                <button type="submit" id="btn-ask-ai" class="btn-editorial-primary">
+                  <span>Analyze Code</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <!-- AI Output Response Block -->
+        <div id="ai-response-container" class="response-panel hidden">
+          <div class="response-editorial-card">
+            <div class="response-editorial-header">
+              <div class="inline-meta-bar">
+                <span id="ai-model-badge" class="meta-item-strong">Google Gemini</span>
+                <span class="meta-sep">•</span>
+                <span id="ai-lang-badge" class="meta-item">PYTHON</span>
+                <span class="meta-sep">•</span>
+                <span id="ai-complexity-badge" class="meta-item">O(N)</span>
+                <span class="meta-sep">•</span>
+                <span id="ai-latency-badge" class="meta-item">140ms</span>
+              </div>
+
+              <button type="button" id="btn-copy-answer" class="btn-editorial-ghost">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Copy Response</span>
+              </button>
+            </div>
+
+            <div class="response-body" id="ai-answer-content">
+              <!-- Rendered Markdown Output -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SECTION 2: Corpus Retrieval Search -->
+    <section id="section-search" class="tab-content">
+      <div class="workbench-panel">
+        <form id="search-form" class="search-form-minimal">
+          <div class="search-input-group">
+            <input 
+              type="text" 
+              id="query-input" 
+              class="editorial-input search-field"
+              placeholder="Query CoIR corpus dataset (e.g., Graph shortest path BFS)..."
+              value="How is the input preprocessed before going to the main function?"
+              required
+              autocomplete="off"
+            />
+            <button type="submit" id="search-btn" class="btn-editorial-primary">
+              <span>Execute Search</span>
+            </button>
+          </div>
+
+          <!-- Retrieval Pipeline Configuration Controls -->
+          <div class="pipeline-config-bar">
+            <div class="config-cell">
+              <label for="top-k-select" class="meta-label">TOP-K</label>
+              <select id="top-k-select" class="minimal-select">
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="20">20</option>
+              </select>
+            </div>
+
+            <div class="config-cell">
+              <label for="mode-select" class="meta-label">PIPELINE</label>
+              <select id="mode-select" class="minimal-select">
+                <option value="hybrid" selected>Hybrid (Dense + BM25)</option>
+                <option value="dense">Dense Semantic Vector Only</option>
+                <option value="bm25">BM25 Lexical Only</option>
+              </select>
+            </div>
+
+            <div class="config-cell toggles-cell">
+              <label class="inline-toggle-label">
+                <input type="checkbox" id="reranker-toggle" checked />
+                <span class="custom-check"></span>
+                <span class="toggle-text">Feature Reranker</span>
+              </label>
+              <label class="inline-toggle-label">
+                <input type="checkbox" id="diversity-toggle" checked />
+                <span class="custom-check"></span>
+                <span class="toggle-text">Result Diversity</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Presets -->
+          <div class="preset-links-row">
+            <span class="sample-label">EXAMPLE QUERIES:</span>
+            <button type="button" class="sample-link" data-query="How is the input preprocessed before going to the main function?">Input Preprocessing</button>
+            <span class="dot-sep">•</span>
+            <button type="button" class="sample-link" data-query="Reverse binary string and count word operations">Binary String Reversal</button>
+            <span class="dot-sep">•</span>
+            <button type="button" class="sample-link" data-query="Graph shortest path using BFS traversal">Graph BFS Traversal</button>
+            <span class="dot-sep">•</span>
+            <button type="button" class="sample-link" data-query="Calculate maximum subsegment sum modulo k">Modulo Subsegment Sum</button>
+          </div>
+        </form>
+
+        <!-- Stats Summary Header for Search Results -->
+        <div id="stats-bar" class="search-meta-bar hidden">
+          <div class="results-header-info">
+            <span id="stat-count" class="meta-count">0</span>
+            <span class="meta-text">results found</span>
+            <span class="meta-sep">|</span>
+            <span id="stat-latency" class="meta-text">0 ms</span>
+            <span class="meta-sep">|</span>
+            <span id="stat-intent" class="meta-intent">GENERAL</span>
+          </div>
+          <div id="stat-terms" class="meta-terms"></div>
+        </div>
+
+        <!-- Search Results List -->
+        <main id="results-container" class="results-list">
+          <div class="empty-state-editorial">
+            <p class="empty-title">Corpus Knowledge Base Search</p>
+            <p class="empty-desc">Enter a search query to evaluate multi-stage retrieval over 8,765 competitive programming solutions in the CoIR Apps dataset.</p>
+          </div>
+        </main>
+      </div>
+    </section>
+
+    <!-- Editorial Footer -->
+    <footer class="editorial-footer">
+      <div class="footer-line"></div>
+      <p class="footer-text">Agentic Code Intelligence &bull; CoIR Apps Dataset &bull; Multi-Stage Dense &amp; Lexical Search Engine</p>
+    </footer>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast-editorial hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

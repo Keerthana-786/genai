@@ -1,0 +1,8 @@
+node_modules/
+.env
+.DS_Store
+*.log
+dist/
+coverage/
+data/coir_apps/raw/
+data/coir_apps/embeddings/

@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-09-20T11:28:42.738Z",
+  "dataset": "CoIR Apps (test split)",
+  "metrics": {
+    "MRR": 0.053,
+    "NDCG@10": 0.0594,
+    "Recall@10": 0.08
+  },
+  "latency": {
+    "avgQueryLatencyMs": 525.67,
+    "totalSec": 264.91
+  },
+  "evalQueryCount": 500,
+  "configuration": {
+    "embeddingModel": "Xenova/all-MiniLM-L6-v2",
+    "bm25Params": {
+      "k1": 1.2,
+      "b": 0.75
+    },
+    "retrievalWeights": {
+      "semanticWeight": 0.5,
+      "lexicalWeight": 0.5
+    },
+    "candidatePoolSize": 50,
+    "rerankerEnabled": true,
+    "diversityEnabled": true
+  }
+}

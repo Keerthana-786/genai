@@ -1,0 +1,21 @@
+{
+  "name": "agentic-code-retrieval",
+  "version": "1.0.0",
+  "description": "Agentic Code Intelligence & Retrieval System in pure JavaScript/Node.js",
+  "main": "src/api/server.js",
+  "scripts": {
+    "prepare-data": "node scripts/prepare-data.js",
+    "build-index": "node scripts/build-index.js",
+    "evaluate": "node scripts/evaluate.js",
+    "benchmark": "node scripts/benchmark.js",
+    "start": "node src/api/server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "@xenova/transformers": "^2.17.2",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "hyparquet": "^1.31.1",
+    "onnxruntime-node": "^1.20.1"
+  }
+}

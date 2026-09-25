@@ -1,0 +1,76 @@
+{
+  "timestamp": "2026-09-20T11:34:59.955Z",
+  "experiments": [
+    {
+      "experiment": "Experiment A: Dense Only",
+      "mrr": 0.0592,
+      "ndcg10": 0.071,
+      "recall10": 0.11,
+      "avgLatencyMs": 317.09,
+      "options": {
+        "mode": "dense",
+        "useQueryPreprocessing": false,
+        "useReranker": false,
+        "useDiversity": false
+      }
+    },
+    {
+      "experiment": "Experiment B: BM25 Only",
+      "mrr": 0.042,
+      "ndcg10": 0.0439,
+      "recall10": 0.05,
+      "avgLatencyMs": 15.84,
+      "options": {
+        "mode": "bm25",
+        "useQueryPreprocessing": false,
+        "useReranker": false,
+        "useDiversity": false
+      }
+    },
+    {
+      "experiment": "Experiment C: Hybrid (Dense + BM25)",
+      "mrr": 0.0656,
+      "ndcg10": 0.0712,
+      "recall10": 0.09,
+      "avgLatencyMs": 205.01,
+      "options": {
+        "mode": "hybrid",
+        "semanticWeight": 0.5,
+        "lexicalWeight": 0.5,
+        "useQueryPreprocessing": false,
+        "useReranker": false,
+        "useDiversity": false
+      }
+    },
+    {
+      "experiment": "Experiment D: Hybrid + Reranking",
+      "mrr": 0.0572,
+      "ndcg10": 0.0672,
+      "recall10": 0.1,
+      "avgLatencyMs": 218.2,
+      "options": {
+        "mode": "hybrid",
+        "semanticWeight": 0.5,
+        "lexicalWeight": 0.5,
+        "useQueryPreprocessing": false,
+        "useReranker": true,
+        "useDiversity": false
+      }
+    },
+    {
+      "experiment": "Experiment E: Hybrid + Reranking + Query Preprocessing",
+      "mrr": 0.1103,
+      "ndcg10": 0.1178,
+      "recall10": 0.14,
+      "avgLatencyMs": 231.35,
+      "options": {
+        "mode": "hybrid",
+        "semanticWeight": 0.5,
+        "lexicalWeight": 0.5,
+        "useQueryPreprocessing": true,
+        "useReranker": true,
+        "useDiversity": true
+      }
+    }
+  ]
+}
